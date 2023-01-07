@@ -14,7 +14,6 @@ pageload <- read.csv(file = "pageload.csv",
                         header=TRUE)
 ```
 
-#### a)
 Horizontal Side by side Boxplot of loadtimes 
 ```{r}
 library(vioplot) # need to install.packages("vioplot")
@@ -36,11 +35,9 @@ legend("topright", legend=c("Old Server", "New Server"),
 It appears that the old server actually tends to minimize Q(0.95) as denoted by the purple line. We also see that the New Server has larger plts, since the vioplots shows kinda like a squeeze towards the ends of the plot.
 
 
-#### b) 
 The Null hypothesis : The Q(0.95) in P_old is same as the  Q(0.95) in P_new
 
 
-#### c)
 Using the discrepancy measure $$D(\mathcal{P}_{old},\mathcal{P}_{new}) = |Q_{old}(0.95)-Q_{new}(0.95)|$$
 
 i. Observed Frequency 
@@ -105,7 +102,6 @@ iv.
 Based on the p-value calculated , we can conclude that there is evidence against
 the Null Hypothesis. In other words, hypothetically, both the populations of new servers and old servers are not the same. 
 
-#### d)
 ```{r}
 library(quantreg)
 reg_quantile = rq(pageload$PLT ~ pageload$Version, tau = 0.95, data=pageload)
