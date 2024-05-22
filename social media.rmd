@@ -1,0 +1,112 @@
+---
+title: "Question 2"
+author: "Raghav Vishnoi"
+date: "02/12/2022"
+output: pdf_document
+---
+
+
+
+Loading Dataset
+```{r}
+setwd("/Users/raghavvishnoi/Desktop/fall\ 22/stat\ 341/a4/")
+pageload <- read.csv(file = "pageload.csv", 
+                        header=TRUE)
+```
+
+Horizontal Side by side Boxplot of loadtimes 
+```{r}
+library(vioplot) # need to install.packages("vioplot")
+
+boxplot(pageload$PLT ~ pageload$Version, horizontal=TRUE, 
+			names=c("Old Server","New Server"), xlab="Payload time", ylab="Server Version", main="...", col = adjustcolor(col = c("darkorchid","seagreen3"), alpha = 0.5))
+vioplot(pageload$PLT ~ pageload$Version, horizontal=TRUE,
+			add=TRUE, col=adjustcolor(col=c("darkorchid","seagreen3"), alpha=0.5))
+# 			
+q_95 = aggregate(x=pageload$PLT, by=list(pageload$Version), FUN = quantile, probs = 0.95 )
+q_95 # 95th Percentiles
+abline(v=c(5.1370	,5.6631), lwd=3, col=c("darkorchid","seagreen3"))
+legend("topright", legend=c("Old Server", "New Server"),
+       col=c("darkorchid", "seagreen3"), lty=c(1,1), cex=0.75,
+       title="Server Payload Times", text.font=0.5, bg='white')
+
+```
+
+It appears that the old server actually tends to minimize Q(0.95) as denoted by the purple line. We also see that the New Server has larger plts, since the vioplots shows kinda like a squeeze towards the ends of the plot.
+
+
+The Null hypothesis : The Q(0.95) in P_old is same as the  Q(0.95) in P_new
+
+
+Using the discrepancy measure $$D(\mathcal{P}_{old},\mathcal{P}_{new}) = |Q_{old}(0.95)-Q_{new}(0.95)|$$
+
+i. Observed Frequency 
+```{r}
+pop <- list(pop1 = subset(pageload, pageload$Version == "Old_Serv"), pop2 = subset(pageload,pageload$Version == "New_Serv"))
+
+D <- function(pop) {
+    ## First sub-population
+    P1 <- pop[[1]]$PLT
+    q1 <- quantile(P1,0.95)
+
+    ## Second sub-population
+    P2 <- pop[[2]]$PLT
+    q2 <- quantile(P2,0.95)
+
+    ## Calculate and return the Discrepancy
+    abs(q1 - q2)
+}
+
+d_obs <- D(pop)
+print(d_obs)
+
+```
+
+ii. Histogram
+The argument is that if we assume that the pops are same under shuffling should result in theh same
+```{r}
+# Adopted from Notes
+mixRandomly <- function(pop) {
+    pop1 <- pop$pop1
+    n_pop1 <- nrow(pop1)
+
+    pop2 <- pop$pop2
+    n_pop2 <- nrow(pop2)
+
+    mix <- rbind(pop1, pop2)
+    select4pop1 <- sample(1:(n_pop1 + n_pop2), n_pop1, replace = FALSE)
+
+    new_pop1 <- mix[select4pop1, ]
+    new_pop2 <- mix[-select4pop1, ]
+    list(pop1 = new_pop1, pop2 = new_pop2)
+}
+
+diffQuantiles <- sapply(1:10000, FUN = function(...) {
+    D(mixRandomly(pop))
+})
+
+hist(diffQuantiles, breaks = 20, main = "Randomly Mixed Populations", xlab = "Discrepancy D",
+    col = adjustcolor("darkorchid", 0.4))
+abline(v = D(pop), col = "darkgreen", lwd = 2)
+
+
+
+```
+
+iii. p value
+```{r}
+mean(diffQuantiles >= D(pop))
+```
+
+iv. 
+Based on the p-value calculated , we can conclude that there is evidence against
+the Null Hypothesis. In other words, hypothetically, both the populations of new servers and old servers are not the same. 
+
+```{r}
+library(quantreg)
+reg_quantile = rq(pageload$PLT ~ pageload$Version, tau = 0.95, data=pageload)
+summary(reg_quantile,se="iid")
+```
+
+
+
